@@ -1,120 +1,216 @@
-// lib/main.dart
 import 'package:flutter/material.dart';
-import 'services/audio_ws_service.dart';
+import 'transcription_controller.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const LiveTranscriptionApp());
 }
 
-class MyApp extends StatefulWidget {
+class LiveTranscriptionApp extends StatelessWidget {
+  const LiveTranscriptionApp({super.key});
+
   @override
-  State<MyApp> createState() => _MyAppState();
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Live Transcription',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        useMaterial3: true,
+      ),
+      home: const TranscriptionPage(),
+    );
+  }
 }
 
-class _MyAppState extends State<MyApp> {
-  final AudioWsService _svc = AudioWsService();
-  String _transcription = "";
-  bool _connected = false;
-  bool _recording = false;
+class TranscriptionPage extends StatefulWidget {
+  const TranscriptionPage({super.key});
 
-  final String wsUrl = "wss://exportable-unsteamed-macy.ngrok-free.dev/ws/transcribe"; // <-- update here
+  @override
+  State<TranscriptionPage> createState() => _TranscriptionPageState();
+}
+
+class _TranscriptionPageState extends State<TranscriptionPage> {
+  final TranscriptionController _controller = TranscriptionController();
+  final TextEditingController _textController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _svc.onTranscript = (text) {
-      setState(() {
-        // append text with newline
-        _transcription = _transcription + (text.trim().isEmpty ? "" : ("\n" + text.trim()));
-      });
-    };
-    _svc.onConnected = () {
-      setState(() => _connected = true);
-    };
-    _svc.onDisconnected = () {
-      setState(() => _connected = false);
-    };
-    _svc.onError = (err) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $err")));
-    };
+    _controller.initialize();
+    _setupListeners();
+  }
 
-    // initialize with given ws
-    _svc.init(wsUrl: wsUrl).catchError((e) {
-      print("Init error: $e");
+  void _setupListeners() {
+    _controller.addListener(() {
+      if (_controller.transcriptionText.isNotEmpty) {
+        _textController.text = _controller.transcriptionText;
+      }
+
+      if (_controller.errorMessage.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_controller.errorMessage)),
+        );
+      }
     });
   }
 
   @override
   void dispose() {
-    _svc.dispose();
+    _controller.dispose();
+    _textController.dispose();
     super.dispose();
-  }
-
-  void _toggleConnect() async {
-    if (_connected) {
-      await _svc.disconnectWebSocket();
-    } else {
-      try {
-        await _svc.connectWebSocket();
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("WS connect error: $e")));
-      }
-    }
-  }
-
-  void _toggleRecording() async {
-    if (!_recording) {
-      await _svc.startRecordingAndStreaming();
-      setState(() => _recording = true);
-    } else {
-      await _svc.stopRecordingAndStreaming();
-      setState(() => _recording = false);
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Realtime Whisper Test',
-      home: Scaffold(
-        appBar: AppBar(
-          title: Text('Realtime Whisper Test'),
-        ),
-        body: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Column(
-            children: [
-              Row(
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Live Transcription'),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            // Connection Status
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: _controller.isConnected
+                    ? Colors.green[100]
+                    : Colors.red[100],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
                 children: [
-                  ElevatedButton(
-                    onPressed: _toggleConnect,
-                    child: Text(_connected ? "Disconnect WS" : "Connect WS"),
+                  Icon(
+                    _controller.isConnected ? Icons.check_circle : Icons.error,
+                    color: _controller.isConnected ? Colors.green : Colors.red,
                   ),
-                  SizedBox(width: 12),
-                  ElevatedButton(
-                    onPressed: _connected ? _toggleRecording : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _recording ? Colors.red : Colors.green,
+                  const SizedBox(width: 8),
+                  Text(
+                    _controller.isConnected ? 'Connected' : 'Disconnected',
+                    style: TextStyle(
+                      color:
+                          _controller.isConnected ? Colors.green : Colors.red,
+                      fontWeight: FontWeight.bold,
                     ),
-                    child: Text(_recording ? "Stop Mic" : "Start Mic"),
-                  )
+                  ),
                 ],
               ),
-              SizedBox(height: 12),
-              Expanded(
-                child: Container(
-                  padding: EdgeInsets.all(8),
-                  decoration: BoxDecoration(border: Border.all(color: Colors.grey)),
-                  child: SingleChildScrollView(
-                    child: SelectableText(
-                      _transcription.isEmpty ? "Transcriptions will appear here..." : _transcription,
-                      style: TextStyle(fontSize: 16),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Recording Status
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: _controller.isRecording
+                    ? Colors.orange[100]
+                    : Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    _controller.isRecording ? Icons.mic : Icons.mic_off,
+                    color:
+                        _controller.isRecording ? Colors.orange : Colors.grey,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _controller.isRecording ? 'Recording...' : 'Not Recording',
+                    style: TextStyle(
+                      color:
+                          _controller.isRecording ? Colors.orange : Colors.grey,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Transcription Text
+            Expanded(
+              child: TextField(
+                controller: _textController,
+                maxLines: null,
+                expands: true,
+                decoration: const InputDecoration(
+                  hintText: 'Transcription will appear here...',
+                  border: OutlineInputBorder(),
+                  alignLabelWithHint: true,
+                ),
+                textAlignVertical: TextAlignVertical.top,
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Control Buttons
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _controller.isConnected
+                        ? null
+                        : _controller.connectToServer,
+                    child: const Text('Connect'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed:
+                        _controller.isConnected && !_controller.isRecording
+                            ? _controller.startRecording
+                            : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                    ),
+                    child: const Text('Start Recording',
+                        style: TextStyle(color: Colors.white)),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 10),
+
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _controller.isRecording
+                        ? _controller.stopRecording
+                        : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                    ),
+                    child: const Text('Stop Recording',
+                        style: TextStyle(color: Colors.white)),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed:
+                        _controller.isConnected ? _controller.disconnect : null,
+                    child: const Text('Disconnect'),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 10),
+
+            ElevatedButton(
+              onPressed: _controller.clearTranscription,
+              child: const Text('Clear Transcription'),
+            ),
+          ],
         ),
       ),
     );

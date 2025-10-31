@@ -30,11 +30,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_sound:   # use latest; no explicit version so pub gets newest compatible
-  web_socket_channel: 
-  path_provider:
+  web_socket_channel:
+  flutter_sound:
   permission_handler:
-  uuid:             # small helper for temp filenames
+  record:
 
 
   # The following adds the Cupertino Icons font to your application.
