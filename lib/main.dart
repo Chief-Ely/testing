@@ -11,7 +11,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Speech to Text',
+      title: 'Speech to Text - Tagalog',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
@@ -33,6 +33,7 @@ class _SpeechToTextPageState extends State<SpeechToTextPage> {
   late SpeechToTextUltra2 speechService;
   bool isListening = false;
   String recognizedText = '';
+  String currentLiveText = '';
   final TextEditingController _textController = TextEditingController();
 
   @override
@@ -43,16 +44,32 @@ class _SpeechToTextPageState extends State<SpeechToTextPage> {
       ultraCallback: (liveText, finalText, listening) {
         setState(() {
           isListening = listening;
-          // Combine final text with live text for real-time display
-          recognizedText = listening ? '$finalText$liveText' : finalText;
-          _textController.text = recognizedText;
-          // Move cursor to end
-          _textController.selection = TextSelection.fromPosition(
-            TextPosition(offset: _textController.text.length),
-          );
+          
+          if (!listening && finalText.isNotEmpty) {
+            // When speech ends, append the final text to the recognized text
+            if (recognizedText.isEmpty) {
+              recognizedText = finalText;
+            } else {
+              recognizedText = '$recognizedText $finalText'.trim();
+            }
+            currentLiveText = '';
+          } else if (listening && liveText.isNotEmpty) {
+            // While listening, update the live text for preview
+            currentLiveText = liveText;
+          }
+          
+          // Update the text field with both final and live text
+          final displayText = '$recognizedText$currentLiveText';
+          if (_textController.text != displayText) {
+            _textController.text = displayText;
+            // Move cursor to end
+            _textController.selection = TextSelection.fromPosition(
+              TextPosition(offset: _textController.text.length),
+            );
+          }
         });
       },
-      language: 'fil-ph', // You can change this to your preferred language
+      language: 'fil-PH', // Tagalog (Filipino) - Philippines
     );
   }
 
@@ -67,6 +84,7 @@ class _SpeechToTextPageState extends State<SpeechToTextPage> {
   void _clearText() {
     setState(() {
       recognizedText = '';
+      currentLiveText = '';
       _textController.clear();
     });
   }
@@ -82,7 +100,7 @@ class _SpeechToTextPageState extends State<SpeechToTextPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text('Speech to Text'),
+        title: const Text('Speech to Text - Tagalog'),
         centerTitle: true,
       ),
       body: Padding(
