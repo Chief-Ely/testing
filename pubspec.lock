@@ -128,6 +128,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  json_annotation:
+    dependency: transitive
+    description:
+      name: json_annotation
+      sha256: "1ce844379ca14835a50d2f019a3099f419082cfdd231cd86a142af94dd5c6bb1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.9.0"
   leak_tracker:
     dependency: transitive
     description:
@@ -201,7 +209,7 @@ packages:
     source: hosted
     version: "1.9.1"
   path_provider:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: path_provider
       sha256: "50c5dd5b6e1aaf6fb3a78b33f6aa3afca52bf903a8a5298f53101fdaee55bbcd"
@@ -248,6 +256,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.0"
+  pedantic:
+    dependency: transitive
+    description:
+      name: pedantic
+      sha256: "67fc27ed9639506c856c840ccce7594d0bdcd91bc8d53d6e52359449a1d50602"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.11.1"
   permission_handler:
     dependency: "direct main"
     description:
@@ -312,6 +328,70 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.8"
+  record:
+    dependency: "direct main"
+    description:
+      name: record
+      sha256: "6bad72fb3ea6708d724cf8b6c97c4e236cf9f43a52259b654efeb6fd9b737f1f"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.1.2"
+  record_android:
+    dependency: transitive
+    description:
+      name: record_android
+      sha256: fb54ee4e28f6829b8c580252a9ef49d9c549cfd263b0660ad7eeac0908658e9f
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.4.4"
+  record_ios:
+    dependency: transitive
+    description:
+      name: record_ios
+      sha256: "765b42ac1be019b1674ddd809b811fc721fe5a93f7bb1da7803f0d16772fd6d7"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.4"
+  record_linux:
+    dependency: transitive
+    description:
+      name: record_linux
+      sha256: "235b1f1fb84e810f8149cc0c2c731d7d697f8d1c333b32cb820c449bf7bb72d8"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.1"
+  record_macos:
+    dependency: transitive
+    description:
+      name: record_macos
+      sha256: "842ea4b7e95f4dd237aacffc686d1b0ff4277e3e5357865f8d28cd28bc18ed95"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.2"
+  record_platform_interface:
+    dependency: transitive
+    description:
+      name: record_platform_interface
+      sha256: b0065fdf1ec28f5a634d676724d388a77e43ce7646fb049949f58c69f3fcb4ed
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.4.0"
+  record_web:
+    dependency: transitive
+    description:
+      name: record_web
+      sha256: "20ac10d56514cb9f8cecc8f3579383084fdfb43b0d04e05a95244d0d76091d90"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.1"
+  record_windows:
+    dependency: transitive
+    description:
+      name: record_windows
+      sha256: "223258060a1d25c62bae18282c16783f28581ec19401d17e56b5205b9f039d78"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.7"
   sky_engine:
     dependency: transitive
     description: flutter
@@ -325,6 +405,38 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.10.1"
+  speech_to_text:
+    dependency: transitive
+    description:
+      name: speech_to_text
+      sha256: c07557664974afa061f221d0d4186935bea4220728ea9446702825e8b988db04
+      url: "https://pub.dev"
+    source: hosted
+    version: "7.3.0"
+  speech_to_text_platform_interface:
+    dependency: transitive
+    description:
+      name: speech_to_text_platform_interface
+      sha256: a1935847704e41ee468aad83181ddd2423d0833abe55d769c59afca07adb5114
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.3.0"
+  speech_to_text_ultra_tg:
+    dependency: "direct main"
+    description:
+      name: speech_to_text_ultra_tg
+      sha256: cdde4bbbb49cbdddf020e405eda686d5a8e579a32a3604b5a3c222ac8a927489
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.7"
+  speech_to_text_windows:
+    dependency: transitive
+    description:
+      name: speech_to_text_windows
+      sha256: "2c9846d18253c7bbe059a276297ef9f27e8a2745dead32192525beb208195072"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0+beta.8"
   sprintf:
     dependency: transitive
     description:
@@ -390,7 +502,7 @@ packages:
     source: hosted
     version: "1.4.0"
   uuid:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: uuid
       sha256: a5be9ef6618a7ac1e964353ef476418026db906c4facdedaa299b7a2e71690ff

@@ -1,149 +1,78 @@
-// lib/main.dart
 import 'package:flutter/material.dart';
-import 'audio_service.dart';
+import 'package:speech_to_text_ultra_tg/speech_to_text_ultra_tg.dart';
 
 void main() {
-  runApp(const LiveTranscriptionApp());
+  runApp(const MyApp());
 }
 
-class LiveTranscriptionApp extends StatelessWidget {
-  const LiveTranscriptionApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Live Transcription',
+      title: 'Speech to Text',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const TranscriptionPage(),
+      home: const SpeechToTextPage(),
     );
   }
 }
 
-//---------------------------------------------------------//
-// CONTROLLER: wraps AudioService and manages UI state
-//---------------------------------------------------------//
-class TranscriptionController extends ChangeNotifier {
-  final AudioService _audioService =
-      AudioService('wss://exportable-unsteamed-macy.ngrok-free.dev/ws'); // Replace with your ngrok WebSocket URL
-
-  bool isConnected = false;
-  bool isRecording = false;
-  String transcriptionText = '';
-  String errorMessage = '';
-
-  Future<void> initialize() async {
-    try {
-      await _audioService.init();
-    } catch (e) {
-      errorMessage = "Initialization error: $e";
-      notifyListeners();
-    }
-  }
-
-  Future<void> connectToServer() async {
-    try {
-      // Just mark connected; connection is made in AudioService.startStreaming()
-      isConnected = true;
-      transcriptionText = "Connected to server.\n";
-      notifyListeners();
-    } catch (e) {
-      errorMessage = "Connection failed: $e";
-      notifyListeners();
-    }
-  }
-
-  Future<void> startRecording() async {
-    try {
-      await _audioService.startStreaming();
-      isRecording = true;
-      transcriptionText += "Recording started...\n";
-      notifyListeners();
-    } catch (e) {
-      errorMessage = "Start recording failed: $e";
-      notifyListeners();
-    }
-  }
-
-  Future<void> stopRecording() async {
-    try {
-      await _audioService.stopStreaming();
-      isRecording = false;
-      transcriptionText += "Recording stopped.\n";
-      notifyListeners();
-    } catch (e) {
-      errorMessage = "Stop recording failed: $e";
-      notifyListeners();
-    }
-  }
-
-  Future<void> disconnect() async {
-    try {
-      await _audioService.dispose();
-      isConnected = false;
-      isRecording = false;
-      transcriptionText += "Disconnected from server.\n";
-      notifyListeners();
-    } catch (e) {
-      errorMessage = "Disconnect failed: $e";
-      notifyListeners();
-    }
-  }
-
-  void clearTranscription() {
-    transcriptionText = '';
-    notifyListeners();
-  }
+class SpeechToTextPage extends StatefulWidget {
+  const SpeechToTextPage({super.key});
 
   @override
-  void dispose() {
-    _audioService.dispose();
-    super.dispose();
-  }
+  State<SpeechToTextPage> createState() => _SpeechToTextPageState();
 }
 
-//---------------------------------------------------------//
-// UI: TranscriptionPage
-//---------------------------------------------------------//
-class TranscriptionPage extends StatefulWidget {
-  const TranscriptionPage({super.key});
-
-  @override
-  State<TranscriptionPage> createState() => _TranscriptionPageState();
-}
-
-class _TranscriptionPageState extends State<TranscriptionPage> {
-  final TranscriptionController _controller = TranscriptionController();
+class _SpeechToTextPageState extends State<SpeechToTextPage> {
+  late SpeechToTextUltra2 speechService;
+  bool isListening = false;
+  String recognizedText = '';
   final TextEditingController _textController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _controller.initialize();
-    _setupListeners();
+    // Initialize the speech service
+    speechService = SpeechToTextUltra2(
+      ultraCallback: (liveText, finalText, listening) {
+        setState(() {
+          isListening = listening;
+          // Combine final text with live text for real-time display
+          recognizedText = listening ? '$finalText$liveText' : finalText;
+          _textController.text = recognizedText;
+          // Move cursor to end
+          _textController.selection = TextSelection.fromPosition(
+            TextPosition(offset: _textController.text.length),
+          );
+        });
+      },
+      language: 'fil-ph', // You can change this to your preferred language
+    );
   }
 
-  void _setupListeners() {
-    _controller.addListener(() {
-      if (_controller.transcriptionText.isNotEmpty) {
-        _textController.text = _controller.transcriptionText;
-      }
+  void _toggleListening() {
+    if (isListening) {
+      speechService.stopListening();
+    } else {
+      speechService.startListening();
+    }
+  }
 
-      if (_controller.errorMessage.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_controller.errorMessage)),
-        );
-      }
-
-      setState(() {}); // trigger rebuild for status changes
+  void _clearText() {
+    setState(() {
+      recognizedText = '';
+      _textController.clear();
     });
   }
 
   @override
   void dispose() {
-    _controller.dispose();
     _textController.dispose();
     super.dispose();
   }
@@ -152,126 +81,104 @@ class _TranscriptionPageState extends State<TranscriptionPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Live Transcription'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        title: const Text('Speech to Text'),
+        centerTitle: true,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildStatusCard(
-              label: _controller.isConnected ? 'Connected' : 'Disconnected',
-              color: _controller.isConnected ? Colors.green : Colors.red,
-              icon: _controller.isConnected ? Icons.check_circle : Icons.error,
-            ),
-            const SizedBox(height: 20),
-            _buildStatusCard(
-              label:
-                  _controller.isRecording ? 'Recording...' : 'Not Recording',
-              color:
-                  _controller.isRecording ? Colors.orange : Colors.grey.shade600,
-              icon:
-                  _controller.isRecording ? Icons.mic : Icons.mic_off,
-            ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: TextField(
-                controller: _textController,
-                maxLines: null,
-                expands: true,
-                readOnly: true,
-                decoration: const InputDecoration(
-                  hintText: 'Transcription will appear here...',
-                  border: OutlineInputBorder(),
-                ),
+            // Status indicator
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+              decoration: BoxDecoration(
+                color: isListening ? Colors.red.shade100 : Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isListening ? Icons.mic : Icons.mic_off,
+                    color: isListening ? Colors.red : Colors.grey,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    isListening ? 'Listening...' : 'Not Listening',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: isListening ? Colors.red : Colors.grey.shade700,
+                    ),
+                  ),
+                ],
               ),
             ),
+            const SizedBox(height: 40),
+
+            // Text field for recognized text
+            TextField(
+              controller: _textController,
+              maxLines: 8,
+              readOnly: true,
+              decoration: InputDecoration(
+                hintText: 'Your speech will appear here...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+                fillColor: Colors.grey.shade50,
+                contentPadding: const EdgeInsets.all(16),
+              ),
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 30),
+
+            // Control buttons
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Mic button
+                FloatingActionButton.large(
+                  onPressed: _toggleListening,
+                  backgroundColor: isListening ? Colors.red : Colors.deepPurple,
+                  child: Icon(
+                    isListening ? Icons.stop : Icons.mic,
+                    size: 36,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 20),
+
+                // Clear button
+                FloatingActionButton(
+                  onPressed: _clearText,
+                  backgroundColor: Colors.orange,
+                  child: const Icon(
+                    Icons.clear,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _controller.isConnected
-                        ? null
-                        : _controller.connectToServer,
-                    child: const Text('Connect'),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed:
-                        _controller.isConnected && !_controller.isRecording
-                            ? _controller.startRecording
-                            : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                    ),
-                    child: const Text('Start Recording',
-                        style: TextStyle(color: Colors.white)),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _controller.isRecording
-                        ? _controller.stopRecording
-                        : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                    ),
-                    child: const Text('Stop Recording',
-                        style: TextStyle(color: Colors.white)),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed:
-                        _controller.isConnected ? _controller.disconnect : null,
-                    child: const Text('Disconnect'),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: _controller.clearTranscription,
-              child: const Text('Clear Transcription'),
+
+            // Help text
+            Text(
+              isListening
+                  ? 'Tap the stop button to finish'
+                  : 'Tap the microphone to start speaking',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+                fontStyle: FontStyle.italic,
+              ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildStatusCard({
-    required String label,
-    required Color color,
-    required IconData icon,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
       ),
     );
   }
